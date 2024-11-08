@@ -1,4 +1,5 @@
-import {pool} from '../db.ts'
+import { pool } from '../db.ts'
+import { UsersSchema } from '../../types/users.types.ts'
 
 export const getUsers = async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM users')
@@ -19,10 +20,23 @@ export const getUser = async(req, res) => {
 
 export const createUser = async(req, res) => {
     try {
-        const {body} =  req
+        const {name, email} =  req.body
+
+        const validateFields = UsersSchema.safeParse({
+            name,
+            email
+        })
+
+        if(!validateFields.success) {
+            res.status(400).json({
+                message: 'not valid data',
+                error: validateFields.error
+            })
+        }
+
         const {rows} = await pool.query(
             'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',
-            [body.name, body.email]
+            [name, email]
         )
         res.json(rows[0])        
     } catch (error) {
